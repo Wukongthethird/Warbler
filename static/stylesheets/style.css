@@ -256,6 +256,12 @@ nav + .container {
   padding-top: 3px;
 }
 
+.like-star {
+  position: absolute;
+  z-index: 2;
+  right: 0%;
+}
+
 #messages {
   position: relative;
 }

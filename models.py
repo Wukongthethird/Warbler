@@ -161,12 +161,9 @@ class User(db.Model):
 
     def is_like(self, message):
 
-        liked_list = [ liked_message for liked_message in self.liked_messages if message.id == liked_message.id  ]
+        liked_list = [liked_message for liked_message in self.liked_messages if message.id == liked_message.id]
 
         return len(liked_list) == 1
-
-    def likes_count(self):
-        return len(self.liked_messages)
 
     @classmethod
     def signup(cls, username, email, password, image_url):
