@@ -307,8 +307,32 @@ def messages_destroy(message_id):
 # Like routes:
 
 @app.route('/like/<int:message_id>', methods=['POST'])
-def toggle_like(message_id):
-    
+def add_like(message_id):
+
+    if not g.user:
+        flash("Sign in to like.")
+        return redirect("/")
+
+    liked_message =  Message.query.get_or_404(message_id)
+    g.user.liked_messages.append(liked_message)
+    db.session.commit()
+
+    return redirect("/")
+
+@app.route('/like/stop-liking/<int:message_id>', methods=['POST'])
+def remove_like(message_id):
+
+    if not g.user:
+        flash("Access unauthorized.")
+        return redirect("/")
+
+    liked_message =  Message.query.get_or_404(message_id)
+    g.user.liked_messages.remove(liked_message)
+    db.session.commit()
+
+    return redirect("/")
+
+
 
 ##############################################################################
 # Homepage and error pages

@@ -26,6 +26,55 @@ class Follows(db.Model):
         primary_key=True,
     )
 
+class Like(db.Model):
+    """An individual like on a message."""
+
+    __tablename__ = 'likes'
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id', ondelete='CASCADE'),
+        primary_key=True
+    )
+
+    message_id = db.Column(
+        db.Integer,
+        db.ForeignKey('messages.id', ondelete='CASCADE'),
+        primary_key=True
+    )
+
+class Message(db.Model):
+    """An individual message ("warble")."""
+
+    __tablename__ = 'messages'
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True,
+    )
+
+    text = db.Column(
+        db.String(140),
+        nullable=False,
+    )
+
+    timestamp = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id', ondelete='CASCADE'),
+        nullable=False,
+    )
+
+    user = db.relationship('User')
+
+    likes = db.relationship("Like")
+
+
 
 class User(db.Model):
     """User in the system."""
@@ -88,7 +137,12 @@ class User(db.Model):
         secondaryjoin=(Follows.user_being_followed_id == id)
     )
 
-    likes = db.relationship("Like")
+    liked_messages = db.relationship(
+        "Message",
+        secondary="likes",
+        primaryjoin=( Like.user_id == id),
+        secondaryjoin=( Like.message_id == Message.id)
+    )
 
     def __repr__(self):
         return f"<User #{self.id}: {self.username}, {self.email}>"
@@ -101,9 +155,18 @@ class User(db.Model):
 
     def is_following(self, other_user):
         """Is this user following `other_use`?"""
-
+        
         found_user_list = [user for user in self.following if user == other_user]
         return len(found_user_list) == 1
+
+    def is_like(self, message):
+
+        liked_list = [ liked_message for liked_message in self.liked_messages if message.id == liked_message.id  ]
+
+        return len(liked_list) == 1
+
+    def likes_count(self):
+        return len(self.liked_messages)
 
     @classmethod
     def signup(cls, username, email, password, image_url):
@@ -145,51 +208,7 @@ class User(db.Model):
         return False
 
 
-class Message(db.Model):
-    """An individual message ("warble")."""
 
-    __tablename__ = 'messages'
-
-    id = db.Column(
-        db.Integer,
-        primary_key=True,
-    )
-
-    text = db.Column(
-        db.String(140),
-        nullable=False,
-    )
-
-    timestamp = db.Column(
-        db.DateTime,
-        nullable=False,
-        default=datetime.utcnow,
-    )
-
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey('users.id', ondelete='CASCADE'),
-        nullable=False,
-    )
-
-    user = db.relationship('User')
-
-class Like(db.Model):
-    """An individual like on a message."""
-
-    __tablename__ = 'likes'
-
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey('users.id', ondelete='CASCADE'),
-        primary_key=True
-    )
-
-    message_id = db.Column(
-        db.Integer,
-        db.ForeignKey('messages.id', ondelete='CASCADE'),
-        primary_key=True
-    )
 
 
 def connect_db(app):

@@ -21,6 +21,16 @@
           </div>
         </li>
 
+        {%if g.user.is_like(message) %}
+        <form method="POST" action='/like/stop-liking/{{ message.id }}'>
+          <button type="submit"><i class="fas fa-star"></i></button>
+        </form>
+    {% else %}
+        <form method="POST" action='/like/{{ message.id }}'>
+            <button type="submit"><i class="far fa-star"></i></button>
+        </form>
+    {% endif %}
+
       {% endfor %}
 
     </ul>
