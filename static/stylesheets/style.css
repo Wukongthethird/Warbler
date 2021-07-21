@@ -210,6 +210,7 @@ nav + .container {
   position: relative;
   left: 50%;
   right: 50%;
+  overflow:hidden;
 }
 
 .row.full-width {
