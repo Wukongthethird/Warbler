@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_
 
 from forms import UserAddForm, LoginForm, MessageForm, EditUserForm
-from models import db, connect_db, User, Message
+from models import db, connect_db, User, Message, Like
 
 CURR_USER_KEY = "curr_user"
 
@@ -209,7 +209,11 @@ def stop_following(follow_id):
 def profile():
     """Update profile for current user."""
 
-    user = User.query.get_or_404(session[CURR_USER_KEY])
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+    
+    user = g.user
     form = EditUserForm(obj=user)
     
     if form.validate_on_submit():
@@ -299,6 +303,12 @@ def messages_destroy(message_id):
 
     return redirect(f"/users/{g.user.id}")
 
+##############################################################################
+# Like routes:
+
+@app.route('/like/<int:message_id>', methods=['POST'])
+def toggle_like(message_id):
+    
 
 ##############################################################################
 # Homepage and error pages
