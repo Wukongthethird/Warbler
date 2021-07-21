@@ -3,6 +3,7 @@ import os
 from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import or_
 
 from forms import UserAddForm, LoginForm, MessageForm, EditUserForm
 from models import db, connect_db, User, Message
@@ -115,8 +116,8 @@ def logout():
 
     # IMPLEMENT THIS
     do_logout()
+    
     flash("You've Successfully Logged out")
-
     return redirect("/")
 
 
@@ -312,8 +313,10 @@ def homepage():
     """
 
     if g.user:
+        follower_ids = [user.id for user in g.user.followers]
         messages = (Message
                     .query
+                    .filter(or_(Message.user_id == g.user.id, Message.user_id.in_(follower_ids)))
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())
