@@ -26,7 +26,10 @@ from app import app
 # and create fresh new clean test data
 
 db.create_all()
-
+testuser2 = {"username": "testuser2",
+              "email": "test2@test.com",
+              "password": "testuser2",
+              "image_url": None}
 
 class UserModelTestCase(TestCase):
     """Test views for messages."""
@@ -38,11 +41,6 @@ class UserModelTestCase(TestCase):
         Message.query.delete()
         Follows.query.delete()
 
-        self.client = app.test_client()
-
-    def test_user_model(self):
-        """Does basic model work?"""
-
         u = User(
             email="test@test.com",
             username="testuser",
@@ -52,6 +50,25 @@ class UserModelTestCase(TestCase):
         db.session.add(u)
         db.session.commit()
 
+        self.client = app.test_client()
+        self.test_user1 = u
+
+    
+    def tearDown(self):
+        """Clean up any fouled transaction."""
+
+        db.session.rollback()
+
+    def test_user_model(self):
+        """Does basic model work?"""
+        
         # User should have no messages & no followers
-        self.assertEqual(len(u.messages), 0)
-        self.assertEqual(len(u.followers), 0)
+        self.assertEqual(len(self.test_user1.messages), 0)
+        self.assertEqual(len(self.test_user1.followers), 0)
+
+    def test_repr(self):
+        """Does the repr method work?"""
+        
+        # User should have no messages & no followers
+        self.assertEqual(repr(self.test_user1), f"<User #{self.test_user1.id}: {self.test_user1.username}, {self.test_user1.email}>")
+        
