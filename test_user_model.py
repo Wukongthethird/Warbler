@@ -8,7 +8,7 @@
 from app import app,  CURR_USER_KEY
 import os
 from unittest import TestCase
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from models import db, User, Message, Follows
 
@@ -30,7 +30,7 @@ PASSWORD = "HASHED_PASSWORD"
 db.create_all()
 
 class UserModelTestCase(TestCase):
-    """Test views for messages."""
+    """Test User Model"""
 
     def setUp(self):
         """Create test client, add sample data."""
@@ -100,11 +100,10 @@ class UserModelTestCase(TestCase):
             test_follow = Follows.query.filter_by(
                 user_following_id=self.test_user1.id).one()
 
+            # self.assertEqual(self.test_user1.is_following(user2), True) ask about this later
             self.assertEqual(resp.status_code, 302)
             self.assertEqual(user2.id, test_follow.user_being_followed_id)
-            self.assertEqual(self.test_user1.id,
-                             test_follow.user_following_id)
-
+            self.assertEqual(self.test_user1.id, test_follow.user_following_id)
             self.assertNotEqual(user3.id, test_follow.user_being_followed_id)
             self.assertNotEqual(user3.id, test_follow.user_following_id)
     
@@ -128,17 +127,20 @@ class UserModelTestCase(TestCase):
     def test_user_invalid_signup(self):
         """Test if invalid credentials fail to create a new user"""
 
-        with self.client as c:
-            resp = c.post('/signup', data={"username":"testuser",
-                            "email":"test2@test.com",
-                            "password":"testuser2"
-                            })
-
-            html = resp.get_data(as_text=True)
+        with self.assertRaises(IntegrityError) as context:
             
+            User.signup(username="testuser",
+                         email="test2@test.com",
+                         password="testuser2",
+                         image_url = None)
+
+            db.session.commit()
+
             users = User.query.all()
             self.assertEqual(len(users),1)
-            self.assertIn('<li><a href="/signup">Sign up</a></li>', html)
+            
+        
+            
 
     def test_authentication(self):
         """Test if valid user can be authenticated"""
