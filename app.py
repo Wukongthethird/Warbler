@@ -278,9 +278,9 @@ def messages_add():
 
     if form.validate_on_submit():
         msg = Message(text=form.text.data)
-        if msg.user_id != g.user.id:
-            flash("Access unauthorized.", "danger")
-            return redirect("/")
+        # if msg.user_id != g.user.id:
+        #     flash("Access unauthorized.", "danger")
+        #     return redirect("/")
             
         g.user.messages.append(msg)
         db.session.commit()

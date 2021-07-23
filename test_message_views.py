@@ -8,6 +8,8 @@
 import os
 from unittest import TestCase
 
+from sqlalchemy.sql.operators import as_
+
 from models import db, connect_db, Message, User
 
 # BEFORE we import our app, let's set an environmental variable
@@ -34,7 +36,7 @@ app.config['WTF_CSRF_ENABLED'] = False
 
 
 class MessageViewTestCase(TestCase):
-    """Test views for messages."""
+    """Test view functions for messages."""
 
     def setUp(self):
         """Create test client, add sample data."""
@@ -51,13 +53,10 @@ class MessageViewTestCase(TestCase):
 
         db.session.commit()
 
-        self.testmessage = Message( text= "Hello",
-                                    user_id = self.testuser.id)
-        
+        self.testmessage = Message( text= "Goodbye")
+        self.testuser.messages.append(self.testmessage)
 
-        db.session.add(self.testmessage)
         db.session.commit()
-
         self.testmessage_id = self.testmessage.id
         
     def tearDown(self):
@@ -65,26 +64,26 @@ class MessageViewTestCase(TestCase):
 
         db.session.rollback()
     
-
     def test_add_message(self):
-        """Can use add a message?"""
-
-        # Since we need to change the session to mimic logging in,
-        # we need to use the changing-session trick:
+        """Can user view add message form and add a message?"""
 
         with self.client as c:
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.testuser.id
-
-            # Now, that session setting is saved, so we can have
-            # the rest of ours test
-          
-            resp = c.post("/messages/new", data={"text": "Hello", "user_id": self.testuser.id })
             
+            # Test that user can view form
+            resp = c.get("/messages/new")
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('<textarea class="form-control" id="text" name="text"', html)
+
+            # Test that user can add message
+            resp = c.post("/messages/new", data={"text": "Hello"})
             
             messages = Message.query.all()
-            message = Message.query.filter( Message.id == self.testmessage_id).one()
-
+            message = Message.query.filter( Message.id != self.testmessage_id).one()
+            
             # Make sure it redirects
             self.assertEqual(resp.status_code, 302)
             self.assertEqual( len(messages), 2 )
@@ -136,3 +135,16 @@ class MessageViewTestCase(TestCase):
  
             self.assertIn('<a href="/signup">Sign up</a>', html)
     
+
+    def test_delete_message(self):
+        """Can a logged in user view an individual message?"""
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser.id
+
+            resp = c.get(f'/messages/{self.testmessage.id}')
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn(f'<p class="single-message">{self.testmessage.text}</p>', html)

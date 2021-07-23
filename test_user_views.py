@@ -1,5 +1,3 @@
-
-
 """User View tests."""
 
 import os
@@ -60,6 +58,40 @@ class UserViewTestCase(TestCase):
 
         db.session.rollback()
 
+    def test_login(self):
+        """Can user view login page and log in with valid credentials?"""
+        
+        with self.client as c:
+            # tests GET request
+            resp = c.get('/login')
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('<h2 class="join-message">Welcome back.</h2>', html)
+
+            # tests POST request
+            resp = c.post('/login', data = {"username": f"{self.testuser.username}",
+                                           "password": "testuser"}, 
+                                           follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn(f'<p>@{self.testuser.username}</p>', html)
+
+
+    def test_view_home_page(self):
+        """Can logged in user view home page?"""
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser.id
+            
+            resp = c.get('/')
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn(f'<p>@{self.testuser.username}</p>', html)
+
     def test_view_user_page(self):
         """Can logged in user view another user's page?"""
 
@@ -114,46 +146,46 @@ class UserViewTestCase(TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn('<h4 id="sidebar-username">@helloworld</h4>', html)
 
-
-    def test_delete_user(self):
-        """Can a User delete their profile."""
+    def test_view_followers(self):
+        """Can logged in user view someone else's followers?"""
 
         with self.client as c:
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.testuser.id
 
+            resp = c.get(f'/users/{self.testuser2.id}/followers')
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('<div class="col-sm-9">', html)
+    
+    def test_unfollow(self):
+        """Can user unfollow someone?"""
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser_id
+
+            c.post(f"/users/follow/{self.testuser2_id}")
+            
+            resp = c.post(f'/users/stop-following/{self.testuser2_id}', follow_redirects=True)
+    
+            user1 = User.query.get(self.testuser_id)
+            user2 = User.query.get(self.testuser2_id)
+            
+            user1_following = user1.following
+            
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(len(user1_following), 0)
+
+    def test_delete_user(self):
+        """Can a User delete their profile?"""
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser.id
 
             resp = c.post("/users/delete", follow_redirects = True )
             users =  User.query.all()
 
             self.assertEqual(resp.status_code, 200)
             self.assertEqual(len(users), 1 )
-    
-    def test_unauthorized_message_transaction(self):
-        """Can you delete/create message as another user"""
-        
-        with self.client as c:
-            with c.session_transaction() as sess:
-                sess[CURR_USER_KEY] = self.testuser.id
-            
-            """Base test message"""
-            test_message = Message( text = "Hello" , user_id = self.testuser2_id)
-            db.session.add( test_message )
-            db.session.commit()
-
-            """Creating a message as another user."""
-            c.post("/messages/new", data={"text": "Wrong User" , "user_id": self.testuser2_id} )  
-
-            messages = Message.query.all()
-            self.assertEqual( len(messages) , 1)
-
-
-            """Deleting a message as another user."""
-            c.post(f'/messages/{test_message.id}/delete')
-            self.assertEqual( len(messages) , 1)
-
-
-
-            
-
-        

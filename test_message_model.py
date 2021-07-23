@@ -56,27 +56,25 @@ class MessageModelTestCase(TestCase):
         db.session.rollback()
 
     def test_message_create(self):
-        with self.client as c:
-            with c.session_transaction() as sess:
-                sess[CURR_USER_KEY] = self.test_user.id
-            
-            new_message = Message(  
-                text = "Test Message",
-                user_id = self.test_user.id
-            )
+        """Can a logged in user create a new message?"""
 
-            db.session.add(new_message)
-            db.session.commit()
+        new_message = Message(  
+            text = "Test Message",
+            user_id = self.test_user.id
+        )
 
-            user2 = User(username="testuser2",
-                         email="test2@test.com",
-                         password="testuser2"
-                         )
+        db.session.add(new_message)
+        db.session.commit()
 
-            db.session.add(user2)
-            db.session.commit()
+        user2 = User(username="testuser2",
+                      email="test2@test.com",
+                      password="testuser2"
+                      )
 
-            messages = Message.query.all()
+        db.session.add(user2)
+        db.session.commit()
+
+        messages = Message.query.all()
 
         self.assertEqual(len(messages),1)
         self.assertEqual( self.test_user.id, new_message.user_id)

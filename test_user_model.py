@@ -67,12 +67,12 @@ class UserModelTestCase(TestCase):
     def test_repr(self):
         """Does the repr method work?"""
 
-        # User should have no messages & no followers
         self.assertEqual(repr(
             self.test_user1), f"<User #{self.test_user1.id}: {self.test_user1.username}, {self.test_user1.email}>")
 
     def test_follow(self):
-        """Is follow keeping track of the right users."""
+        """Do is_following and is_followed_by methods work?"""
+        
         with self.client as c:
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.test_user1.id
@@ -93,20 +93,21 @@ class UserModelTestCase(TestCase):
             db.session.add(user3)
             db.session.commit()
 
+            # user1 is following user2
             resp = c.post(f"/users/follow/{user2.id}")
 
-        # Make sure it redirects
+            # ASK ABOUT THIS
+            user1 = User.query.get(self.test_user1.id)
+            user2 = User.query.get(user2.id)
+            user3 = User.query.get(user3.id)
 
-            test_follow = Follows.query.filter_by(
-                user_following_id=self.test_user1.id).one()
-
-            # self.assertEqual(self.test_user1.is_following(user2), True) ask about this later
             self.assertEqual(resp.status_code, 302)
-            self.assertEqual(user2.id, test_follow.user_being_followed_id)
-            self.assertEqual(self.test_user1.id, test_follow.user_following_id)
-            self.assertNotEqual(user3.id, test_follow.user_being_followed_id)
-            self.assertNotEqual(user3.id, test_follow.user_following_id)
+            self.assertIs(user1.is_following(user2), True)
+            self.assertIs(user1.is_following(user3), False)
+            self.assertIs(user2.is_followed_by(user1), True)
+            self.assertIs(user3.is_followed_by(user1), False)
     
+
     def test_user_signup(self):
         """Successfully create a new user given valid credentials?"""
 
@@ -122,8 +123,7 @@ class UserModelTestCase(TestCase):
 
         self.assertEqual(len(users),2)
 
-        # signup(cls, username, email, password, image_url)
-
+    
     def test_user_invalid_signup(self):
         """Test if invalid credentials fail to create a new user"""
 
@@ -138,10 +138,8 @@ class UserModelTestCase(TestCase):
 
             users = User.query.all()
             self.assertEqual(len(users),1)
-            
-        
-            
 
+            
     def test_authentication(self):
         """Test if valid user can be authenticated"""
 
