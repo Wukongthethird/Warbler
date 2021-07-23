@@ -51,6 +51,21 @@ class MessageViewTestCase(TestCase):
 
         db.session.commit()
 
+        self.testmessage = Message( text= "Hello",
+                                    user_id = self.testuser.id)
+        
+
+        db.session.add(self.testmessage)
+        db.session.commit()
+
+        self.testmessage_id = self.testmessage.id
+        
+    def tearDown(self):
+        """Clean up any fouled transaction."""
+
+        db.session.rollback()
+    
+
     def test_add_message(self):
         """Can use add a message?"""
 
@@ -63,11 +78,61 @@ class MessageViewTestCase(TestCase):
 
             # Now, that session setting is saved, so we can have
             # the rest of ours test
-
-            resp = c.post("/messages/new", data={"text": "Hello"})
+          
+            resp = c.post("/messages/new", data={"text": "Hello", "user_id": self.testuser.id })
+            
+            
+            messages = Message.query.all()
+            message = Message.query.filter( Message.id == self.testmessage_id).one()
 
             # Make sure it redirects
             self.assertEqual(resp.status_code, 302)
+            self.assertEqual( len(messages), 2 )
+            self.assertEqual( message.text , "Hello")
 
-            msg = Message.query.one()
-            self.assertEqual(msg.text, "Hello")
+            with c.session_transaction() as sess:
+                del sess[CURR_USER_KEY]
+                
+            resp = c.post("/messages/new", data={"text": "Not Allowed", "user_id": self.testuser.id })
+            
+            messages = Message.query.all()
+
+            # Make sure it redirects
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual( len(messages), 2 )
+            self.assertIs( bool(Message.query.filter( Message.text == "Not Allowed").all() ), False)
+      
+    def test_delete_message(self):
+        """Can a user delete a message?"""
+
+        # Since we need to change the session to mimic logging in,
+        # we need to use the changing-session trick:
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser.id
+
+            resp = c.post( f'/messages/{self.testmessage.id}/delete' , follow_redirects = True)
+            html = resp.get_data( as_text=True)
+
+            messages = Message.query.all()
+
+            self.assertEqual(len(messages), 0)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn(f'{self.testuser.username}', html)
+        
+            self.tearDown()
+            self.setUp()
+
+            with c.session_transaction() as sess:
+                del sess[CURR_USER_KEY]
+                
+            resp = c.post( f'/messages/{self.testmessage.id}/delete' , follow_redirects = True)
+            html = resp.get_data( as_text=True)
+
+            messages = Message.query.all()
+
+            self.assertEqual(len(messages), 1)
+ 
+            self.assertIn('<a href="/signup">Sign up</a>', html)
+    

@@ -270,6 +270,7 @@ def messages_add():
     """
 
     if not g.user:
+
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
@@ -277,6 +278,10 @@ def messages_add():
 
     if form.validate_on_submit():
         msg = Message(text=form.text.data)
+        if msg.user_id != g.user.id:
+            flash("Access unauthorized.", "danger")
+            return redirect("/")
+            
         g.user.messages.append(msg)
         db.session.commit()
 
@@ -301,7 +306,11 @@ def messages_destroy(message_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
+    
     msg = Message.query.get(message_id)
+    if msg.user_id != g.user.id:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
     db.session.delete(msg)
     db.session.commit()
 

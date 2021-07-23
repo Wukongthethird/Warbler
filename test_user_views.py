@@ -1,14 +1,4 @@
-  # with self.client as c:
-            # resp = c.post('/signup', data={"username":"testuser",
-            #                 "email":"test2@test.com",
-            #                 "password":"testuser2"
-            #                 })
 
-            # html = resp.get_data(as_text=True)
-            
-            # users = User.query.all()
-            # self.assertEqual(len(users),1)
-            # self.assertIn('<li><a href="/signup">Sign up</a></li>', html)
 
 """User View tests."""
 
@@ -96,21 +86,21 @@ class UserViewTestCase(TestCase):
             self.assertIn(f'<a href="/signup">Sign up</a>', html)
       
     def test_profile(self):
-      """Can logged in user view and edit profile?"""
+        """Can logged in user view and edit profile?"""
 
-      with self.client as c:
-          with c.session_transaction() as sess:
-              sess[CURR_USER_KEY] = self.testuser.id
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser.id
           
           # GET route
-          resp = c.get('/users/profile')
-          html = resp.get_data(as_text=True)
+            resp = c.get('/users/profile')
+            html = resp.get_data(as_text=True)
 
-          self.assertEqual(resp.status_code, 200)
-          self.assertIn(f'{self.testuser.username}', html)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn(f'{self.testuser.username}', html)
 
           # POST route
-          resp = c.post('/users/profile', data={"username":"helloworld",
+            resp = c.post('/users/profile', data={"username":"helloworld",
                             "email":"test@test.com",
                             "password":"testuser",
                             "image_url": None,
@@ -119,7 +109,51 @@ class UserViewTestCase(TestCase):
                             },
                             follow_redirects=True)
           
-          html = resp.get_data(as_text=True)
+            html = resp.get_data(as_text=True)
           
-          self.assertEqual(resp.status_code, 200)
-          self.assertIn('<h4 id="sidebar-username">@helloworld</h4>', html)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('<h4 id="sidebar-username">@helloworld</h4>', html)
+
+
+    def test_delete_user(self):
+        """Can a User delete their profile."""
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser.id
+
+
+            resp = c.post("/users/delete", follow_redirects = True )
+            users =  User.query.all()
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(len(users), 1 )
+    
+    def test_unauthorized_message_transaction(self):
+        """Can you delete/create message as another user"""
+        
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser.id
+            
+            """Base test message"""
+            test_message = Message( text = "Hello" , user_id = self.testuser2_id)
+            db.session.add( test_message )
+            db.session.commit()
+
+            """Creating a message as another user."""
+            c.post("/messages/new", data={"text": "Wrong User" , "user_id": self.testuser2_id} )  
+
+            messages = Message.query.all()
+            self.assertEqual( len(messages) , 1)
+
+
+            """Deleting a message as another user."""
+            c.post(f'/messages/{test_message.id}/delete')
+            self.assertEqual( len(messages) , 1)
+
+
+
+            
+
+        
