@@ -19,13 +19,13 @@
         </span>
         <p>{{ message.text }}</p>
       </div>
-      {% if g.user.is_like(message) %}
-      <form method="POST" action='/like/stop-liking/{{ message.id }}' class='like-star'>
-        <button type="submit"><i class="fas fa-star"></i></button>
+      {% if g.user.is_like(message) %} <!-- Position absolute, add z-index -->
+      <form class='like-star'>
+        <i id = "{{message.id}}" class="fa-star fas"></i>
       </form>
       {% else %}
-      <form method="POST" action='/like/{{ message.id }}' class='like-star'>
-        <button type="submit"><i class="far fa-star"></i></button>
+      <form class='like-star'>
+        <i id = "{{message.id}}" class="fa-star far"></i>
       </form>
       {% endif %}
     </li>
