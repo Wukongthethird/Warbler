@@ -60,11 +60,11 @@
             
             {% if g.user.is_like(msg) %} <!-- Position absolute, add z-index -->
             <form class='like-star'>
-              <i id = "{{msg.id}}" class="fas fa-star"></i>
+              <i id = "{{msg.id}}" class="fa-star fas"></i>
             </form>
             {% else %}
             <form class='like-star'>
-              <i id = "{{msg.id}}" class="far fa-star"></i>
+              <i id = "{{msg.id}}" class="fa-star far"></i>
             </form>
             {% endif %}
           </li>

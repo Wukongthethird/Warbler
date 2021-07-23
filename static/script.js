@@ -39,10 +39,10 @@ async function togglelikeUI( evt ){
     console.log(starClass)
     console.log(msgId)
     let resp; 
-    if (starClass === "fas fa-star"){
+    if (starClass === "fa-star fas"){
         resp = await dislike(msgId)
     }   
-    else if (starClass === "far fa-star"){
+    else if (starClass === "fa-star far"){
         resp = await addLike(msgId)
     }   
     
