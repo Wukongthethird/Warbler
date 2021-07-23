@@ -59,12 +59,12 @@
             </div>
             
             {% if g.user.is_like(msg) %} <!-- Position absolute, add z-index -->
-            <form method="POST" action='/like/stop-liking/{{ msg.id }}' class='like-star'>
-              <button type="submit"><i class="fas fa-star"></i></button>
+            <form class='like-star'>
+              <i id = "{{msg.id}}" class="fas fa-star"></i>
             </form>
             {% else %}
-            <form method="POST" action='/like/{{ msg.id }}' class='like-star'>
-              <button type="submit"><i class="far fa-star"></i></button>
+            <form class='like-star'>
+              <i id = "{{msg.id}}" class="far fa-star"></i>
             </form>
             {% endif %}
           </li>

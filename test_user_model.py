@@ -57,9 +57,22 @@ class UserModelTestCase(TestCase):
 
         db.session.rollback()
 
+    #  create user without signup, just the base model
     def test_user_model(self):
         """Does basic model work?"""
 
+        u = User(
+            email="test@testgmail.com",
+            username="testuserintestfunction",
+            password="HASHED_PASSWORD",
+            image_url=None
+        )
+
+        db.session.add(u)
+        db.session.commit()
+        self.assertEqual(len(u.messages), 0)
+        self.assertEqual(len(u.followers), 0)
+                
         # User should have no messages & no followers
         self.assertEqual(len(self.test_user1.messages), 0)
         self.assertEqual(len(self.test_user1.followers), 0)
@@ -95,8 +108,13 @@ class UserModelTestCase(TestCase):
 
             # user1 is following user2
             resp = c.post(f"/users/follow/{user2.id}")
+            #  do model test without view function via relationship -> append
+            
 
             # ASK ABOUT THIS
+            #  we got the instance but not the methods/relationship
+            # detatched instance message
+            # we can do this in the setup
             user1 = User.query.get(self.test_user1.id)
             user2 = User.query.get(user2.id)
             user3 = User.query.get(user3.id)
@@ -122,6 +140,8 @@ class UserModelTestCase(TestCase):
         users = User.query.all()
 
         self.assertEqual(len(users),2)
+        # stronger asserts is the new user properties
+        #  all bcrypt passwords starts $2b$
 
     
     def test_user_invalid_signup(self):
@@ -129,6 +149,7 @@ class UserModelTestCase(TestCase):
 
         with self.assertRaises(IntegrityError) as context:
             
+
             User.signup(username="testuser",
                          email="test2@test.com",
                          password="testuser2",
@@ -139,7 +160,20 @@ class UserModelTestCase(TestCase):
             users = User.query.all()
             self.assertEqual(len(users),1)
 
-            
+        # try:
+        #     User.signup(username="testuser",
+        #                 email="test2@test.com",
+        #                 password="testuser2",
+        #                 image_url = None)
+
+        #     db.session.commit()
+
+        # except IntegrityError:
+        #     print( "WE GOT IN #############################")
+        #     users = User.query.all()
+        #     self.assertEqual(len(users),1)
+
+    # seperate into serperate tests
     def test_authentication(self):
         """Test if valid user can be authenticated"""
 

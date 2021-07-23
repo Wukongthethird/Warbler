@@ -108,6 +108,7 @@ class UserViewTestCase(TestCase):
             self.assertIn(f"{user2.username}", html)
 
             # Test that user cannot view another user's profile if not logged in
+            # seperate test
             with c.session_transaction() as sess:
                 del sess[CURR_USER_KEY]
             
@@ -189,3 +190,6 @@ class UserViewTestCase(TestCase):
 
             self.assertEqual(resp.status_code, 200)
             self.assertEqual(len(users), 1 )
+
+
+# add like tests

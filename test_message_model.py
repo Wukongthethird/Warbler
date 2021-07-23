@@ -34,9 +34,9 @@ class MessageModelTestCase(TestCase):
     def setUp(self):
         """Create test client, add sample data."""
 
-        User.query.delete()
-        Message.query.delete()
         Follows.query.delete()
+        Message.query.delete()
+        User.query.delete()
 
         u = User.signup(
             email="test@test.com",

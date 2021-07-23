@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, render_template, request, flash, redirect, session, g
+from flask import Flask, render_template, request, flash, redirect, session, g, jsonify
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_
@@ -330,8 +330,9 @@ def add_like(message_id):
     liked_message = Message.query.get_or_404(message_id)
     g.user.liked_messages.append(liked_message)
     db.session.commit()
+    #  json 
 
-    return redirect("/")
+    return jsonify(result="like")
 
 @app.route('/like/stop-liking/<int:message_id>', methods=['POST'])
 def remove_like(message_id):
@@ -345,7 +346,7 @@ def remove_like(message_id):
     g.user.liked_messages.remove(liked_message)
     db.session.commit()
 
-    return redirect("/")
+    return jsonify(result="dislike")
 
 @app.route('/users/likes')
 def show_likes():

@@ -64,6 +64,7 @@ class MessageViewTestCase(TestCase):
 
         db.session.rollback()
     
+    # split add messages into three tests
     def test_add_message(self):
         """Can user view add message form and add a message?"""
 
@@ -122,7 +123,7 @@ class MessageViewTestCase(TestCase):
         
             self.tearDown()
             self.setUp()
-
+            # split this into another test... delete when logged out
             with c.session_transaction() as sess:
                 del sess[CURR_USER_KEY]
                 
@@ -135,8 +136,8 @@ class MessageViewTestCase(TestCase):
  
             self.assertIn('<a href="/signup">Sign up</a>', html)
     
-
-    def test_delete_message(self):
+    
+    def test_view_message(self):
         """Can a logged in user view an individual message?"""
 
         with self.client as c:
@@ -147,4 +148,7 @@ class MessageViewTestCase(TestCase):
             html = resp.get_data(as_text=True)
 
             self.assertEqual(resp.status_code, 200)
+            #  too verbose. if someone makes an edit to the html the test will failed
             self.assertIn(f'<p class="single-message">{self.testmessage.text}</p>', html)
+
+# test to view message that doesnt exist
