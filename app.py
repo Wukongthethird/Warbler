@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, flash, redirect, session, g, 
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_
-
+from flask_cors import CORS
 from forms import UserAddForm, LoginForm, MessageForm, EditUserForm
 from models import db, connect_db, User, Message, Like
 
@@ -14,6 +14,7 @@ database_url = os.environ.get('DATABASE_URL', 'postgresql:///warbler')
 
 database_url = database_url.replace('postgres://', 'postgresql://')
 app = Flask(__name__)
+CORS(app)
 
 # Get DB_URI from environ variable (useful for production/testing) or,
 # if not set there, use development local db.
@@ -118,10 +119,9 @@ def logout():
 
     # IMPLEMENT THIS
     do_logout()
-    
+
     flash("You've Successfully Logged out")
     return redirect("/")
-
 
 
 ##############################################################################
@@ -147,7 +147,7 @@ def list_users():
 @app.route('/users/<int:user_id>')
 def users_show(user_id):
     """Show user profile."""
-    
+
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
@@ -214,23 +214,22 @@ def stop_following(follow_id):
 @app.route('/users/profile', methods=["GET", "POST"])
 def profile():
     """Update profile for current user."""
-
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
-    
+
     user = g.user
     form = EditUserForm(obj=user)
-    
+
     if form.validate_on_submit():
         try:
             user.username = form.username.data
             password = form.password.data
             user.email = form.email.data
-            user.image_url = form.image_url.data or User.image_url.default.arg 
+            user.image_url = form.image_url.data or User.image_url.default.arg
             user.bio = form.bio.data
-            user.header_image_url = form.header_image_url.data or User.header_image_url.default.arg 
-            
+            user.header_image_url = form.header_image_url.data or User.header_image_url.default.arg
+
             if User.authenticate(user.username, password):
                 db.session.commit()
                 return redirect(f'/users/{user.id}')
@@ -242,7 +241,7 @@ def profile():
             flash("Username already taken", 'danger')
             return render_template('users/edit.html', form=form)
 
-    return render_template('/users/edit.html',form=form)
+    return render_template('/users/edit.html', form=form, user_id=user.id)
 
 
 @app.route('/users/delete', methods=["POST"])
@@ -283,7 +282,7 @@ def messages_add():
         # if msg.user_id != g.user.id:
         #     flash("Access unauthorized.", "danger")
         #     return redirect("/")
-            
+
         g.user.messages.append(msg)
         db.session.commit()
 
@@ -308,7 +307,6 @@ def messages_destroy(message_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    
     msg = Message.query.get(message_id)
     if msg.user_id != g.user.id:
         flash("Access unauthorized.", "danger")
@@ -321,10 +319,12 @@ def messages_destroy(message_id):
 ##############################################################################
 # Like routes:
 
+
 @app.route('/like/<int:message_id>', methods=['POST'])
 def add_like(message_id):
     """Allows user to like a message"""
-
+    user = g.user
+    print('user', user)
     if not g.user:
         flash("Sign in to like.")
         return redirect("/")
@@ -332,9 +332,10 @@ def add_like(message_id):
     liked_message = Message.query.get_or_404(message_id)
     g.user.liked_messages.append(liked_message)
     db.session.commit()
-    #  json 
+    #  json
 
     return jsonify(result="like")
+
 
 @app.route('/like/stop-liking/<int:message_id>', methods=['POST'])
 def remove_like(message_id):
@@ -350,15 +351,17 @@ def remove_like(message_id):
 
     return jsonify(result="dislike")
 
-@app.route('/users/likes')
+
+@app.route('/users/<int:user_id>/likes', methods=["GET"])
 def show_likes():
     """Shows all liked messages"""
 
     if not g.user:
         flash("Sign in to like.")
         return redirect("/")
-    
-    user = g.user
+
+    # user = g.user
+    user = User.query.get_or_404(user_id)
     return render_template('/likes/show.html', user=user)
 
 ##############################################################################
