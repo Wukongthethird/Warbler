@@ -19,13 +19,30 @@
         </span>
         <p>{{ message.text }}</p>
       </div>
-      {% if g.user.is_like(message) %}
+      <!-- {% if g.user.is_like(message) %}
       <form method="POST" action='/like/stop-liking/{{ message.id }}' class='like-star'>
         <button type="submit"><i class="fas fa-star"></i></button>
       </form>
       {% else %}
       <form method="POST" action='/like/{{ message.id }}' class='like-star'>
         <button type="submit"><i class="far fa-star"></i></button>
+      </form>
+      {% endif %} -->
+      {% if message.user_id != g.user.id and g.user.is_like(message) %}
+      <form method="POST" action="/messages/{{ message.id }}/like" class="messages-like-bottom">
+        <button class="
+      btn-sm 
+      {{'btn-primary'}}">
+          <i class="fas fa-star "></i>
+        </button>
+      </form>
+      {% elif message.user_id != g.user.id and not g.user.is_like(message)%}
+      <form method="POST" action="/messages/{{ message.id }}/like" class="messages-like-bottom">
+        <button class="
+      btn-sm 
+      {{'btn-primary'}}">
+          <i class="far fa-star "></i>
+        </button>
       </form>
       {% endif %}
     </li>

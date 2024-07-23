@@ -9,6 +9,9 @@ async function addLike(msgId) {
     const resp = await axios({
       url: BASE_URL + `/like/${msgId}`,
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
     console.debug("resp", resp);
     return resp.data.result;

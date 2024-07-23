@@ -19,13 +19,24 @@
         </span>
         <p>{{ message.text }}</p>
       </div>
-      {% if g.user.is_like(message) %} <!-- Position absolute, add z-index -->
+      <!-- {% if g.user.is_like(message) %} Position absolute, add z-index
       <form class='like-star'>
         <i id = "{{message.id}}" class="fa-star fas"></i>
       </form>
       {% else %}
       <form class='like-star'>
         <i id = "{{message.id}}" class="fa-star far"></i>
+      </form>
+      {% endif %} -->
+      {% if message.user_id != g.user.id %}
+      <form method="POST" action="/messages/{{ message.id }}/like" class="messages-like-bottom">
+        <button class="
+          btn 
+          btn-sm 
+          {{'btn-primary' if message in g.user.liked_messages else 'btn-secondary'}}">
+          <i class="fa-star fas"></i>
+        </button>
+        print here
       </form>
       {% endif %}
     </li>

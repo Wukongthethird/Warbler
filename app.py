@@ -2,11 +2,11 @@ from models import db, connect_db, User, Message, Like
 from forms import UserAddForm, LoginForm, MessageForm, EditUserForm
 import os
 
-from flask import Flask, render_template, request, flash, redirect, session, g, jsonify
+from flask import Flask, render_template, request, flash, redirect, session, g, jsonify, abort
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 
 CURR_USER_KEY = "curr_user"
 
@@ -15,6 +15,7 @@ database_url = os.environ.get('DATABASE_URL', 'postgresql:///warbler')
 database_url = database_url.replace('postgres://', 'postgresql://')
 app = Flask(__name__)
 CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 # Get DB_URI from environ variable (useful for production/testing) or,
 # if not set there, use development local db.
@@ -320,21 +321,40 @@ def messages_destroy(message_id):
 # Like routes:
 
 
-@app.route('/like/<int:message_id>', methods=['POST'])
+# @app.route('/like/<int:message_id>', methods=['POST'])
+# @cross_origin(origin='*', headers=['Content-Type', 'Authorization'])
+@app.route('/messages/<int:message_id>/like', methods=['POST'])
 def add_like(message_id):
     """Allows user to like a message"""
-    user = g.user
-    print('user', user)
+    # user = g.user
+    # print('user', user)
+    # if not g.user:
+    #     flash("Sign in to like.")
+    #     return redirect("/")
+
+    # liked_message = Message.query.get_or_404(message_id)
+    # g.user.liked_messages.append(liked_message)
+    # db.session.commit()
+    #  json
+    print('here')
     if not g.user:
-        flash("Sign in to like.")
+        flash("Access unauthorized.", "danger")
         return redirect("/")
 
     liked_message = Message.query.get_or_404(message_id)
-    g.user.liked_messages.append(liked_message)
-    db.session.commit()
-    #  json
+    if liked_message.user_id == g.user.id:
+        return abort(403)
 
-    return jsonify(result="like")
+    if liked_message in g.user.liked_messages:
+        g.user.liked_messages.remove(liked_message)
+    else:
+        g.user.liked_messages.append(liked_message)
+
+    db.session.commit()
+
+    return redirect("/")
+
+    # return jsonify(result="like")
 
 
 @app.route('/like/stop-liking/<int:message_id>', methods=['POST'])
@@ -353,7 +373,7 @@ def remove_like(message_id):
 
 
 @app.route('/users/<int:user_id>/likes', methods=["GET"])
-def show_likes():
+def show_likes(user_id):
     """Shows all liked messages"""
 
     if not g.user:
