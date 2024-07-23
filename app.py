@@ -1,3 +1,5 @@
+from models import db, connect_db, User, Message, Like
+from forms import UserAddForm, LoginForm, MessageForm, EditUserForm
 import os
 
 from flask import Flask, render_template, request, flash, redirect, session, g, jsonify
@@ -5,8 +7,6 @@ from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_
 from flask_cors import CORS
-from forms import UserAddForm, LoginForm, MessageForm, EditUserForm
-from models import db, connect_db, User, Message, Like
 
 CURR_USER_KEY = "curr_user"
 
